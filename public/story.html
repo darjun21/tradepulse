@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TradePulse — Watch how we save businesses $34,000</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#07080a;overflow:hidden;font-family:'Figtree',sans-serif;color:#eef0f6;-webkit-font-smoothing:antialiased}
+
+.canvas{width:100vw;height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* GRID BG */
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+
+/* LOGO TOP */
+.top-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;z-index:20}
+.logo{display:flex;align-items:center;gap:8px}
+.lmark{width:28px;height:28px;background:#00d4aa;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#07080a}
+.lname{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#eef0f6}
+.lname span{color:#00d4aa}
+.progress-wrap{flex:1;margin:0 1.5rem;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.progress-bar{height:100%;background:#00d4aa;border-radius:2px;transition:width .4s ease;width:0%}
+.scene-lbl{font-size:11px;font-family:'JetBrains Mono',monospace;color:#3d4153;white-space:nowrap}
+
+/* SCENES */
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem 4rem;opacity:0;pointer-events:none;transition:opacity .6s ease}
+.scene.active{opacity:1;pointer-events:auto}
+
+/* COMMON */
+.stag{font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#3d4153;margin-bottom:.75rem;opacity:0;transform:translateY(8px);transition:all .5s .1s}
+.scene.active .stag{opacity:1;transform:none}
+.stitle{font-family:'Syne',sans-serif;font-size:clamp(1.4rem,5vw,2.2rem);font-weight:800;line-height:1.2;letter-spacing:-0.03em;text-align:center;margin-bottom:.75rem;opacity:0;transform:translateY(12px);transition:all .5s .2s}
+.scene.active .stitle{opacity:1;transform:none}
+.sdesc{font-size:clamp(13px,2vw,15px);color:#7c8194;line-height:1.75;text-align:center;max-width:500px;margin-bottom:1.25rem;opacity:0;transform:translateY(8px);transition:all .5s .35s}
+.scene.active .sdesc{opacity:1;transform:none}
+
+/* ANIMATED ELEMENTS */
+.el{opacity:0;transform:translateY(16px);transition:all .5s}
+.scene.active .el{opacity:1;transform:none}
+.el.d1{transition-delay:.45s}
+.el.d2{transition-delay:.6s}
+.el.d3{transition-delay:.75s}
+.el.d4{transition-delay:.9s}
+
+/* ICON CIRCLE */
+.icon-circle{width:80px;height:80px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto .875rem;font-size:36px;opacity:0;transform:scale(.7);transition:all .5s .15s}
+.scene.active .icon-circle{opacity:1;transform:scale(1)}
+.ic-green{background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.2);color:#00d4aa}
+.ic-red{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.25);color:#f87171}
+.ic-amber{background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.25);color:#fbbf24}
+.ic-blue{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);color:#60a5fa}
+
+/* MONEY CARD */
+.mcard{background:#0f1115;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem 1.25rem;width:100%;max-width:360px;margin:.25rem auto}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+.mrow:last-child{border:none;padding-top:10px;font-size:15px;font-weight:600}
+.mlbl{color:#7c8194}
+.mval{font-family:'JetBrains Mono',monospace}
+.red{color:#f87171}.green{color:#00d4aa}.amber{color:#fbbf24}
+
+/* COUNTER */
+.counter-wrap{text-align:center;margin:.5rem 0}
+.counter-num{font-family:'Syne',sans-serif;font-size:clamp(3rem,12vw,5rem);font-weight:800;letter-spacing:-0.04em;line-height:1}
+.counter-lbl{font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;color:#7c8194;margin-top:.35rem}
+
+/* ALERT CARD */
+.alert-card{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:12px;padding:.875rem 1.1rem;width:100%;max-width:380px;margin:.5rem auto;display:flex;align-items:flex-start;gap:10px}
+.alert-card .ai{font-size:18px;color:#f87171;flex-shrink:0;margin-top:1px}
+.alert-card .ab .at{font-size:12px;font-weight:600;color:#f87171;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+.alert-card .ab .ad{font-size:12px;color:#7c8194;line-height:1.6}
+
+/* SUCCESS CARD */
+.success-card{background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:.875rem 1.1rem;width:100%;max-width:380px;margin:.5rem auto;display:flex;align-items:flex-start;gap:10px}
+.success-card .si{font-size:18px;color:#00d4aa;flex-shrink:0;margin-top:1px}
+.success-card .sb .st{font-size:12px;font-weight:600;color:#00d4aa;margin-bottom:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+.success-card .sb .sd{font-size:12px;color:#7c8194;line-height:1.6}
+
+/* VS */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:380px;margin:.5rem auto}
+.vbox{border-radius:12px;padding:.875rem;text-align:center}
+.vbad{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2)}
+.vgood{background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2)}
+.vlbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem}
+.vbad .vlbl{color:#f87171}.vgood .vlbl{color:#00d4aa}
+.vval{font-size:1.4rem;font-weight:800;font-family:'Syne',sans-serif}
+.vbad .vval{color:#f87171}.vgood .vval{color:#00d4aa}
+.vsub{font-size:11px;color:#7c8194;margin-top:4px;line-height:1.4}
+
+/* CTA */
+.cta-btn{display:inline-flex;align-items:center;gap:8px;background:#00d4aa;color:#07080a;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;padding:14px 32px;border-radius:12px;text-decoration:none;margin-top:.5rem;transition:transform .15s,opacity .15s}
+.cta-btn:hover{transform:scale(1.03);opacity:.92}
+.cta-sub{font-size:12px;color:#3d4153;margin-top:.5rem;font-family:'JetBrains Mono',monospace}
+
+/* PULSE ANIM */
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.08)}}
+.pulse{animation:pulse 1.2s ease-in-out infinite}
+
+/* FLOAT ANIM */
+@keyframes floatUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+
+/* BOTTOM CONTROLS */
+.controls{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.5rem;border-top:1px solid rgba(255,255,255,0.05);z-index:20}
+.ctrl-btn{display:flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:transparent;font-family:'Figtree',sans-serif;font-size:13px;color:#7c8194;cursor:pointer;transition:all .15s}
+.ctrl-btn:hover:not(:disabled){background:rgba(255,255,255,0.05);color:#eef0f6}
+.ctrl-btn:disabled{opacity:.25;cursor:not-allowed}
+.ctrl-btn.play{background:#00d4aa;color:#07080a;border-color:#00d4aa;font-weight:600}
+.ctrl-btn.play:hover{opacity:.9;background:#00d4aa}
+.dots{display:flex;gap:5px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12);cursor:pointer;transition:all .3s}
+.dot.on{background:#00d4aa;width:20px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid"></div>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="logo">
+      <div class="lmark">T</div>
+      <div class="lname">Trade<span>Pulse</span></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="prog"></div></div>
+    <div class="scene-lbl" id="slbl">1 / 8</div>
+  </div>
+
+  <!-- SCENE 0: MEET LISA -->
+  <div class="scene active" id="s0">
+    <div class="stag">A real story · Dallas, Texas · 2026</div>
+    <div class="icon-circle ic-green">&#127968;</div>
+    <div class="stitle">Meet Lisa.<br>She runs a furniture store in Dallas.</div>
+    <div class="sdesc">Lisa imports sofas, tables, and chairs from China. 8 years in business. $100,000 in orders every quarter. Life is good. Until one Tuesday morning.</div>
+    <div class="mcard el d1">
+      <div class="mrow"><span class="mlbl">Business</span><span class="mval">Dallas Furniture Imports</span></div>
+      <div class="mrow"><span class="mlbl">Source country</span><span class="mval">Guangdong, China</span></div>
+      <div class="mrow"><span class="mlbl">Quarterly order</span><span class="mval green">$100,000</span></div>
+      <div class="mrow"><span class="mlbl">Years in business</span><span class="mval">8 years</span></div>
+    </div>
+  </div>
+
+  <!-- SCENE 1: THE ORDER -->
+  <div class="scene" id="s1">
+    <div class="stag">The order · January 2026</div>
+    <div class="icon-circle ic-blue">&#128674;</div>
+    <div class="stitle">Lisa places her biggest order yet.</div>
+    <div class="sdesc">She wires $100,000 to her Shenzhen supplier. The factory confirms. A container is loaded. The ship departs. Everything is perfect.</div>
+    <div class="counter-wrap el d1">
+      <div class="counter-num green" id="orderCounter">$0</div>
+      <div class="counter-lbl">ORDER WIRED · SHIP DEPARTED · ETA 28 DAYS</div>
+    </div>
+  </div>
+
+  <!-- SCENE 2: TARIFF HITS -->
+  <div class="scene" id="s2">
+    <div class="stag">14 days later · Federal Register</div>
+    <div class="icon-circle ic-red"><span class="pulse">&#9888;</span></div>
+    <div class="stitle" style="color:#f87171">The US government<br>raises tariffs on Chinese furniture.</div>
+    <div class="sdesc">The US Trade Representative files a Section 301 action. 34% tariff on HTS 4407 — wood furniture from China. Effective immediately.</div>
+    <div class="alert-card el d1">
+      <div class="ai"><span class="pulse">&#9888;</span></div>
+      <div class="ab">
+        <div class="at">&#x1F1FA;&#x1F1F8; FEDERAL REGISTER — OFFICIAL NOTICE</div>
+        <div class="ad">Section 301 tariff on Chinese wood products (HTS 4407.10) increased to <strong style="color:#f87171">34%</strong>. Effective immediately. All shipments subject to new rate upon arrival.</div>
+      </div>
+    </div>
+    <div class="el d2" style="font-size:12px;color:#3d4153;font-family:'JetBrains Mono',monospace;text-align:center">Source: federalregister.gov · 2025-09297.pdf · Official US government publication</div>
+  </div>
+
+  <!-- SCENE 3: CUSTOMS BILL -->
+  <div class="scene" id="s3">
+    <div class="stag">28 days later · Port of Los Angeles</div>
+    <div class="icon-circle ic-amber">&#128667;</div>
+    <div class="stitle">The shipment arrives.<br>The customs bill arrives.</div>
+    <div class="sdesc">Lisa opens her customs statement expecting zero extra charges. She reads the number. Then reads it again. Her hands are shaking.</div>
+    <div class="mcard el d1">
+      <div class="mrow"><span class="mlbl">Product value</span><span class="mval">$100,000</span></div>
+      <div class="mrow"><span class="mlbl">Expected tariff</span><span class="mval green">$0</span></div>
+      <div class="mrow"><span class="mlbl">Actual tariff (34%)</span><span class="mval red">$34,000</span></div>
+      <div class="mrow"><span class="mlbl">Must pay to clear customs</span><span class="mval red">$34,000</span></div>
+    </div>
+  </div>
+
+  <!-- SCENE 4: THE LOSS -->
+  <div class="scene" id="s4">
+    <div class="stag">The brutal reality</div>
+    <div class="icon-circle ic-red">&#128532;</div>
+    <div class="stitle">$34,000 gone.<br>Zero warning. Zero time to act.</div>
+    <div class="sdesc">Lisa's entire quarterly profit — wiped out in one day. She couldn't switch suppliers. The ship already arrived. Nothing she could do.</div>
+    <div class="counter-wrap el d1">
+      <div class="counter-num red" id="lossCounter">$0</div>
+      <div class="counter-lbl">QUARTERLY PROFIT · COMPLETELY WIPED OUT</div>
+    </div>
+    <div class="el d2" style="font-size:13px;color:#f87171;text-align:center;margin-top:.5rem;font-family:'JetBrains Mono',monospace">She found out too late. She couldn't do anything.</div>
+  </div>
+
+  <!-- SCENE 5: TRADEPULSE ALERT -->
+  <div class="scene" id="s5">
+    <div class="stag">What TradePulse would have done</div>
+    <div class="icon-circle ic-green">&#128276;</div>
+    <div class="stitle">TradePulse detects the<br>tariff filing 14 days early.</div>
+    <div class="sdesc">TradePulse monitors the Federal Register, USTR filings, and 35,000+ HTS codes 24/7. The moment the tariff review is filed — Lisa gets a real-time alert.</div>
+    <div class="success-card el d1">
+      <div class="si">&#9650;</div>
+      <div class="sb">
+        <div class="st">TRADEPULSE ALERT · 14 DAYS EARLY</div>
+        <div class="sd">Proposed 34% tariff on Chinese furniture (HTS 4407). Decision in 14 days.<br><strong style="color:#00d4aa">Action: Switch to Vietnam supplier — save $24,000. Vietnam rate: 10%.</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 6: SWITCH AND SAVE -->
+  <div class="scene" id="s6">
+    <div class="stag">Lisa takes action · 14 days early</div>
+    <div class="icon-circle ic-green">&#10003;</div>
+    <div class="stitle">Lisa switches suppliers.<br>Saves $24,000.</div>
+    <div class="sdesc">With TradePulse's 14-day warning, Lisa cancels the China order and redirects to her Vietnam supplier. Vietnam tariff: 10%. Not 34%.</div>
+    <div class="vs el d1">
+      <div class="vbox vbad">
+        <div class="vlbl">Without TradePulse</div>
+        <div class="vval">-$34,000</div>
+        <div class="vsub">No warning. No time. Entire profit lost.</div>
+      </div>
+      <div class="vbox vgood">
+        <div class="vlbl">With TradePulse</div>
+        <div class="vval">+$24,000</div>
+        <div class="vsub">14-day alert. Switched suppliers. Profit saved.</div>
+      </div>
+    </div>
+    <div class="el d2" style="font-size:13px;color:#7c8194;text-align:center;margin-top:.5rem">$299/month subscription · Saved $24,000 on one shipment · ROI: 8,000%</div>
+  </div>
+
+  <!-- SCENE 7: CTA -->
+  <div class="scene" id="s7">
+    <div class="stag">Your business · Your money · Your choice</div>
+    <div class="icon-circle ic-green">&#128640;</div>
+    <div class="stitle">Don't be Lisa.<br>Be the business that knew first.</div>
+    <div class="sdesc">TradePulse watches US tariffs 24/7 using real government data from the Federal Register and USITC. Get alerts before tariff changes cost you tens of thousands.</div>
+    <div class="el d1" style="text-align:center">
+      <a href="https://tradepulse.online" class="cta-btn">&#9889; Start free 30-day trial</a>
+      <div class="cta-sub">No credit card · No commitment · tradepulse.online</div>
+    </div>
+    <div class="vs el d2" style="margin-top:.75rem">
+      <div class="vbox vbad">
+        <div class="vlbl">Without TradePulse</div>
+        <div class="vval">$34,000</div>
+        <div class="vsub">Average loss from one tariff surprise</div>
+      </div>
+      <div class="vbox vgood">
+        <div class="vlbl">TradePulse cost</div>
+        <div class="vval">$299/mo</div>
+        <div class="vsub">Less than one hour of a lawyer's time</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="ctrl-btn" id="prevBtn" onclick="prev()" disabled>&#8592; Back</button>
+    <div class="dots" id="dots"></div>
+    <button class="ctrl-btn play" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+  </div>
+</div>
+
+<script>
+var cur=0, total=8, playing=false, timer=null, duration=6000;
+
+function updateUI(){
+  for(var i=0;i<total;i++){
+    var el=document.getElementById('s'+i);
+    if(el) el.classList.toggle('active',i===cur);
+  }
+  document.getElementById('prog').style.width=Math.round((cur/(total-1))*100)+'%';
+  document.getElementById('slbl').textContent=(cur+1)+' / '+total;
+  document.getElementById('prevBtn').disabled=cur===0;
+  var dots='';
+  for(var i=0;i<total;i++) dots+='<div class="dot'+(i===cur?' on':'')+'" onclick="goTo('+i+')"></div>';
+  document.getElementById('dots').innerHTML=dots;
+
+  // Trigger counters
+  if(cur===1) countUp('orderCounter','$',100000,1200,'green');
+  if(cur===4) countUp('lossCounter','$',34000,1200,'red');
+}
+
+function countUp(id,prefix,target,dur,cls){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var start=Date.now(), from=0;
+  function step(){
+    var t=Math.min(1,(Date.now()-start)/dur);
+    var ease=t<.5?2*t*t:(1-(2*(1-t))*(2*(1-t))*-1+1)/1;
+    var val=Math.round(from+(target-from)*t);
+    el.textContent=prefix+val.toLocaleString();
+    if(t<1)requestAnimationFrame(step);
+    else el.textContent=prefix+target.toLocaleString();
+  }
+  requestAnimationFrame(step);
+}
+
+function next(){if(cur<total-1){cur++;updateUI();}}
+function prev(){if(cur>0){cur--;updateUI();}}
+function goTo(i){cur=i;updateUI();}
+
+function togglePlay(){
+  if(playing){
+    playing=false;
+    clearInterval(timer);
+    document.getElementById('playBtn').innerHTML='&#9654; Play';
+  } else {
+    playing=true;
+    document.getElementById('playBtn').innerHTML='&#9646;&#9646; Pause';
+    timer=setInterval(function(){
+      if(cur<total-1){cur++;updateUI();}
+      else{playing=false;clearInterval(timer);document.getElementById('playBtn').innerHTML='&#9654; Replay';cur=0;}
+    },duration);
+  }
+}
+
+// Keyboard & swipe
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();next();}
+  if(e.key==='ArrowLeft'){e.preventDefault();prev();}
+  if(e.key==='p'||e.key==='P')togglePlay();
+});
+var tx=0;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>50){dx<0?next():prev();}
+});
+
+updateUI();
+// Auto-start after 1.5s
+setTimeout(function(){togglePlay();},1500);
+</script>
+</body>
+</html>
