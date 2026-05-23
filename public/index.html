@@ -379,6 +379,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
           <tr><td>Total landed cost</td><td id="r-total"></td></tr>
         </table>
         <div class="ai-tip" id="aiTip"></div>
+        <a id="verifyBtn" href="#" target="_blank" style="display:none;margin-top:.75rem;padding:8px 14px;border-radius:8px;background:#E6F1FB;color:#0C447C;font-size:12px;font-weight:500;text-decoration:none;align-items:center;gap:6px;border:0.5px solid #B5D4F4"><i class="ti ti-external-link" style="font-size:13px;margin-right:5px"></i> View official US government document showing 34% China tariff (PDF)</a>
       </div>
     </div>
 
@@ -449,82 +450,13 @@ function calcCost(){
   else tag.style.display='none';
   document.getElementById('aiTip').innerHTML='<strong>TradePulse insight:</strong> '+TIPS[o];
   document.getElementById('resultCard').style.display='block';
+  var HTS_CODES={furn:'440710',elec:'847130',text:'610910',auto:'870829',mach:'847989'};
+  var htsCode = HTS_CODES[h] || '440710';
+  var verifyBtn = document.getElementById('verifyBtn');
+  var HTS_VERIFY={'440710':'https://hts.usitc.gov/reststop/api/details/en/4407','847130':'https://hts.usitc.gov/reststop/api/details/en/8471','610910':'https://hts.usitc.gov/reststop/api/details/en/6109','870829':'https://hts.usitc.gov/reststop/api/details/en/8708','847989':'https://hts.usitc.gov/reststop/api/details/en/8479'};
+  verifyBtn.href = 'https://public-inspection.federalregister.gov/2025-09297.pdf';
+  verifyBtn.style.display = 'inline-flex';
 }
 </script>
 </body>
 </html>
-<script>
-// ─── CONNECT TO REAL TRADEPULSE API ──────────────────────────────────────────
-const API = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000/api' 
-  : 'https://tradepulse-production-8951.up.railway.app/api';
-
-// Load real alerts from backend
-async function loadAlerts() {
-  try {
-    const res = await fetch(`${API}/alerts`);
-    const data = await res.json();
-    if (!data.success) return;
-    // Update metric cards
-    document.querySelector('.met.r .met-val').textContent = data.total;
-    document.querySelector('.met.r:nth-child(2) .met-val').textContent = data.critical;
-    console.log('TradePulse: Real alerts loaded from API', data.total, 'alerts');
-  } catch(e) {
-    console.log('TradePulse: Running in demo mode (API offline)');
-  }
-}
-
-// Load real tariff data into calculator
-async function calcCostReal() {
-  const val = parseFloat(document.getElementById('prodVal').value) || 50000;
-  const country = document.getElementById('origin').value;
-  const category = document.getElementById('hts').value;
-  const weight = parseFloat(document.getElementById('weight').value) || 2000;
-
-  try {
-    const res = await fetch(`${API}/calculate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productValue: val, country, category, weightLbs: weight })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error('API error');
-
-    const c = data.costs;
-    document.getElementById('r-prod').textContent = '$' + c.productValue.toLocaleString();
-    document.getElementById('r-duty').textContent = '$' + c.dutyTax.toLocaleString() + ' (' + data.tariff.totalRate + ')';
-    document.getElementById('r-freight').textContent = '$' + c.freight.toLocaleString();
-    document.getElementById('r-ins').textContent = '$' + c.insurance.toLocaleString();
-    document.getElementById('r-customs').textContent = '$' + c.customsBrokerage.toLocaleString();
-    document.getElementById('r-total').textContent = '$' + c.totalLandedCost.toLocaleString();
-
-    const tag = document.getElementById('savingsTag');
-    if (data.savings.vsChina > 0) {
-      tag.textContent = 'Saving $' + data.savings.vsChina.toLocaleString() + ' vs China';
-      tag.style.display = 'inline-flex';
-    } else { tag.style.display = 'none'; }
-
-    const TIPS = {
-      cn: 'TradePulse detected Vietnam has lower tariffs for this category. Switching suppliers could save significant cost.',
-      vn: 'Good sourcing choice. USTR is reviewing a proposed +15% for electronics. Consider locking in orders before the ruling.',
-      mx: 'Mexico qualifies for 0% USMCA duty-free — the most cost-efficient sourcing route right now.',
-      in: 'India has a stable trade relationship with the US. No pending tariff reviews for this category in the next 90 days.',
-      kr: 'South Korea qualifies under KORUS FTA. Rates are stable with no risk signals currently.'
-    };
-    document.getElementById('aiTip').innerHTML = '<strong>TradePulse insight:</strong> ' + TIPS[country];
-    document.getElementById('resultCard').style.display = 'block';
-
-    console.log('TradePulse: Real tariff data used —', data.tariff.htsCode, data.tariff.totalRate);
-  } catch(e) {
-    // Fallback to local calculation if API offline
-    calcCost();
-  }
-}
-
-// Override the calc button to use real API
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.querySelector('.calc-btn');
-  if (btn) btn.setAttribute('onclick', 'calcCostReal()');
-  loadAlerts();
-});
-</script>
