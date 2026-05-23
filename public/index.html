@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradePulse — Supply Chain Intelligence</title>
+<meta name="description" content="Real-time tariff alerts, supplier risk scoring, and landed cost calculator for US importers and manufacturers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Figtree:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #07080a;
+  --surface: #0f1115;
+  --surface2: #161820;
+  --surface3: #1c1f28;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.11);
+  --text: #eef0f6;
+  --text2: #7c8194;
+  --text3: #3d4153;
+  --accent: #00d4aa;
+  --accent-dim: rgba(0,212,170,0.08);
+  --accent-border: rgba(0,212,170,0.25);
+  --accent2: #0ea5e9;
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.08);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.08);
+  --green: #00d4aa;
+  --green-dim: rgba(0,212,170,0.08);
+  --sans: 'Figtree', sans-serif;
+  --display: 'Syne', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --r: 8px;
+  --rl: 12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* PULSE ANIMATION */
+@keyframes pulse-ring{0%{transform:scale(0.8);opacity:1}100%{transform:scale(2);opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* TOPNAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 1.75rem;height:52px;border-bottom:1px solid var(--border);background:rgba(7,8,10,0.92);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:28px;height:28px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;position:relative}
+.logo-mark::after{content:'';position:absolute;inset:0;border-radius:6px;border:1.5px solid var(--accent);animation:pulse-ring 2s ease-out infinite}
+.logo-mark i{font-size:15px;color:#07080a}
+.logo-text{font-family:var(--display);font-size:1.1rem;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.logo-text span{color:var(--accent)}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{background:none;border:none;color:var(--text2);font-family:var(--sans);font-size:0.82rem;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px}
+.nav-tab:hover{background:var(--surface2);color:var(--text)}
+.nav-tab.on{background:var(--surface2);color:var(--text);font-weight:500}
+.nav-tab .dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 2s infinite}
+.nav-tab.on .dot{background:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.live-pill{display:flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:99px;padding:4px 10px;font-size:11px;font-family:var(--mono);color:var(--accent)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1.5s infinite}
+.user-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:99px;padding:4px 12px 4px 6px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.user-av{width:22px;height:22px;border-radius:50%;background:var(--accent-dim);border:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--accent)}
+.user-name{font-size:12px;color:var(--text2)}
+
+/* LAYOUT */
+.shell{display:flex;flex:1}
+.sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0}
+.sb-section{margin-bottom:1.25rem}
+.sb-label{font-size:10px;font-family:var(--mono);letter-spacing:0.1em;color:var(--text3);padding:0 1rem;margin-bottom:5px;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 1rem;color:var(--text2);font-size:0.82rem;cursor:pointer;transition:all 0.12s;border-right:2px solid transparent;margin-bottom:1px}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.on{background:var(--accent-dim);color:var(--accent);border-right-color:var(--accent)}
+.sb-item i{font-size:15px;flex-shrink:0}
+.sb-badge{margin-left:auto;font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:99px;border:1px solid}
+.sb-badge.r{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.2)}
+.sb-badge.g{background:var(--green-dim);color:var(--green);border-color:rgba(0,212,170,0.2)}
+.sb-footer{margin-top:auto;padding:.875rem 1rem;border-top:1px solid var(--border)}
+.company-row{display:flex;align-items:center;gap:9px}
+.company-av{width:30px;height:30px;border-radius:6px;background:var(--accent-dim);border:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:11px;font-weight:700;color:var(--accent)}
+.company-name{font-size:12px;font-weight:500;color:var(--text)}
+.company-plan{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* MAIN */
+.main{flex:1;overflow:auto;padding:1.75rem;min-width:0}
+.page{display:none;animation:fadeUp 0.2s ease}
+.page.on{display:block}
+
+/* PAGE HEADER */
+.ph{margin-bottom:1.5rem}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}
+.ph-title{font-family:var(--display);font-size:1.4rem;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.ph-sub{font-size:0.78rem;color:var(--text2);font-family:var(--mono);display:flex;align-items:center;gap:6px}
+
+/* METRIC STRIP */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.met{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.1rem;position:relative;overflow:hidden}
+.met::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.met.r::before{background:var(--red)}
+.met.g::before{background:var(--accent)}
+.met.b::before{background:var(--accent2)}
+.met.a::before{background:var(--amber)}
+.met-val{font-family:var(--display);font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-0.03em}
+.met-lbl{font-size:0.72rem;color:var(--text2);margin-top:4px}
+.met-chg{font-size:0.68rem;margin-top:3px;font-family:var(--mono)}
+.chg-r{color:var(--red)}.chg-g{color:var(--accent)}.chg-n{color:var(--text3)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem;margin-bottom:1rem}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-size:0.82rem;font-weight:600;color:var(--text);font-family:var(--display);letter-spacing:0.01em}
+.card-meta{font-size:0.7rem;color:var(--text3);font-family:var(--mono)}
+
+/* ALERTS */
+.alert-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.alert-item:last-child{border-bottom:none;padding-bottom:0}
+.a-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.a-body{flex:1;min-width:0}
+.a-title{font-size:0.82rem;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.4}
+.a-desc{font-size:0.75rem;color:var(--text2);margin-top:4px;line-height:1.6}
+.a-time{font-size:0.68rem;color:var(--text3);font-family:var(--mono);flex-shrink:0;padding-top:2px}
+.badge{display:inline-flex;align-items:center;font-size:0.65rem;font-family:var(--mono);font-weight:500;padding:2px 6px;border-radius:4px;border:1px solid;letter-spacing:0.03em}
+.bd-r{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.2)}
+.bd-a{background:var(--amber-dim);color:var(--amber);border-color:rgba(251,191,36,0.2)}
+.bd-b{background:rgba(14,165,233,0.08);color:var(--accent2);border-color:rgba(14,165,233,0.2)}
+.bd-g{background:var(--green-dim);color:var(--green);border-color:rgba(0,212,170,0.2)}
+
+/* SUPPLIER TABLE */
+.st{width:100%;border-collapse:collapse;font-size:0.78rem}
+.st th{font-size:0.65rem;font-family:var(--mono);color:var(--text3);text-align:left;padding:0 10px 10px 0;letter-spacing:0.08em;text-transform:uppercase}
+.st td{padding:9px 10px 9px 0;border-top:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.st td:first-child{color:var(--text);font-weight:500}
+.sbar-wrap{display:flex;align-items:center;gap:8px}
+.sbar-bg{width:64px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.sbar{height:100%;border-radius:2px}
+.snum{font-family:var(--mono);font-size:0.75rem;font-weight:500;min-width:22px}
+
+/* CALCULATOR */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:0.7rem;color:var(--text3);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:0.82rem;padding:8px 11px;outline:none;transition:border-color 0.15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field select option{background:var(--surface2)}
+.calc-btn{width:100%;padding:10px;background:var(--accent);color:#07080a;border:none;border-radius:var(--r);font-family:var(--display);font-size:0.875rem;font-weight:700;cursor:pointer;transition:opacity 0.15s;margin-top:4px;letter-spacing:0.01em}
+.calc-btn:hover{opacity:0.88}
+.result-tbl{width:100%;border-collapse:collapse;margin-top:.75rem}
+.result-tbl td{font-size:0.82rem;padding:7px 0;border-bottom:1px solid var(--border)}
+.result-tbl td:first-child{color:var(--text2)}
+.result-tbl td:last-child{text-align:right;font-family:var(--mono);color:var(--text);font-size:0.78rem}
+.result-tbl tr:last-child td{border-bottom:none;font-weight:700;font-size:0.92rem;padding-top:11px}
+.ai-tip{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--r);padding:.875rem 1rem;margin-top:.875rem;font-size:0.78rem;color:#5eead4;line-height:1.7}
+.ai-tip strong{color:var(--accent);font-family:var(--display)}
+
+/* CHART GRID */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .nav{padding:0 1rem}
+  .main{padding:1rem}
+  .calc-grid{grid-template-columns:1fr}
+  .cgrid{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="#">
+    <div class="logo-mark"><i class="ti ti-activity-heartbeat"></i></div>
+    <div class="logo-text">Trade<span>Pulse</span></div>
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab on" onclick="showPage('alerts',this)"><span class="dot"></span> Alerts</button>
+    <button class="nav-tab" onclick="showPage('risk',this)"><i class="ti ti-shield" style="font-size:13px"></i> Risk</button>
+    <button class="nav-tab" onclick="showPage('calc',this)"><i class="ti ti-calculator" style="font-size:13px"></i> Calculator</button>
+  </div>
+  <div class="nav-right">
+    <div class="live-pill"><span class="live-dot"></span>Live · 14 alerts</div>
+    <div class="user-btn">
+      <div class="user-av">AI</div>
+      <span class="user-name">Acme Imports</span>
+    </div>
+  </div>
+</nav>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Monitor</div>
+      <div class="sb-item on" onclick="showPage('alerts',this)"><i class="ti ti-bell"></i> Tariff alerts <span class="sb-badge r">4</span></div>
+      <div class="sb-item" onclick="showPage('risk',this)"><i class="ti ti-shield-check"></i> Supplier risk <span class="sb-badge r">2</span></div>
+      <div class="sb-item" onclick="showPage('calc',this)"><i class="ti ti-calculator"></i> Cost calculator</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Manage</div>
+      <div class="sb-item"><i class="ti ti-building-factory"></i> My suppliers</div>
+      <div class="sb-item"><i class="ti ti-world"></i> Trade routes</div>
+      <div class="sb-item"><i class="ti ti-file-invoice"></i> Savings log <span class="sb-badge g">$284K</span></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Reports</div>
+      <div class="sb-item"><i class="ti ti-chart-line"></i> Analytics</div>
+      <div class="sb-item"><i class="ti ti-send"></i> Weekly digest</div>
+    </div>
+    <div class="sb-footer">
+      <div class="company-row">
+        <div class="company-av">TP</div>
+        <div>
+          <div class="company-name">TradePulse</div>
+          <div class="company-plan">Pro · tradepulse.online</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ALERTS PAGE -->
+    <div id="page-alerts" class="page on">
+      <div class="ph">
+        <div class="ph-top">
+          <div class="ph-title">Tariff alerts</div>
+        </div>
+        <div class="ph-sub"><span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;animation:blink 1.5s infinite"></span> Live monitoring · May 22, 2026 · 23 suppliers watched</div>
+      </div>
+      <div class="metrics">
+        <div class="met r"><div class="met-val">14</div><div class="met-lbl">Active alerts</div><div class="met-chg chg-r">+3 since yesterday</div></div>
+        <div class="met r"><div class="met-val">4</div><div class="met-lbl">Critical — act today</div><div class="met-chg chg-r">Needs response</div></div>
+        <div class="met g"><div class="met-val">$284K</div><div class="met-lbl">Losses prevented</div><div class="met-chg chg-g">This month</div></div>
+        <div class="met b"><div class="met-val">23</div><div class="met-lbl">Suppliers monitored</div><div class="met-chg chg-n">8 countries</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Recent alerts</div>
+          <div class="card-meta">Sorted by severity</div>
+        </div>
+        <div class="alert-item">
+          <div class="a-icon" style="background:var(--red-dim);color:var(--red)"><i class="ti ti-alert-triangle"></i></div>
+          <div class="a-body">
+            <div class="a-title">US tariff on Chinese wood products raised to 34% <span class="badge bd-r">CRITICAL</span></div>
+            <div class="a-desc">HTS 4407.10 — affects 3 of your active suppliers. Estimated landed cost increase: +$42,000 on next shipment. Rerouting to Vietnam suppliers recommended.</div>
+          </div>
+          <div class="a-time">2h ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="a-icon" style="background:var(--red-dim);color:var(--red)"><i class="ti ti-alert-triangle"></i></div>
+          <div class="a-body">
+            <div class="a-title">Shenzhen Furniture Co. — financial distress signal <span class="badge bd-r">CRITICAL</span></div>
+            <div class="a-desc">3 missed payments reported. Credit score dropped 72→41. Recommend qualifying alternate supplier before next PO.</div>
+          </div>
+          <div class="a-time">5h ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="a-icon" style="background:var(--amber-dim);color:var(--amber)"><i class="ti ti-world"></i></div>
+          <div class="a-body">
+            <div class="a-title">Vietnam electronics tariff review — proposed +15% <span class="badge bd-a">WATCH</span></div>
+            <div class="a-desc">USTR published review notice. Decision in 45 days. Impacts HTS 8471. Consider pre-ordering before ruling.</div>
+          </div>
+          <div class="a-time">Yesterday</div>
+        </div>
+        <div class="alert-item">
+          <div class="a-icon" style="background:rgba(14,165,233,0.08);color:var(--accent2)"><i class="ti ti-ship"></i></div>
+          <div class="a-body">
+            <div class="a-title">Port of LA congestion — 8-day delay <span class="badge bd-b">INFO</span></div>
+            <div class="a-desc">Average dwell time up to 8.3 days. 2 of your shipments affected. Estimated delay: 6–10 additional days.</div>
+          </div>
+          <div class="a-time">2 days ago</div>
+        </div>
+        <div class="alert-item">
+          <div class="a-icon" style="background:var(--green-dim);color:var(--accent)"><i class="ti ti-check"></i></div>
+          <div class="a-body">
+            <div class="a-title">Mexico USMCA duty-free confirmed for auto parts <span class="badge bd-g">SAVINGS</span></div>
+            <div class="a-desc">HTS 8708 qualifies for 0% under USMCA. Projected savings: $18,400/quarter for your Monterrey orders.</div>
+          </div>
+          <div class="a-time">3 days ago</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK PAGE -->
+    <div id="page-risk" class="page">
+      <div class="ph">
+        <div class="ph-title">Supplier risk</div>
+        <div class="ph-sub">23 suppliers monitored · AI-powered scoring</div>
+      </div>
+      <div class="metrics">
+        <div class="met r"><div class="met-val" style="color:var(--red)">2</div><div class="met-lbl">High risk</div><div class="met-chg chg-r">Needs attention</div></div>
+        <div class="met a"><div class="met-val" style="color:var(--amber)">7</div><div class="met-lbl">Medium risk</div><div class="met-chg chg-n">Monitor closely</div></div>
+        <div class="met g"><div class="met-val" style="color:var(--accent)">14</div><div class="met-lbl">Low risk</div><div class="met-chg chg-g">All good</div></div>
+        <div class="met b"><div class="met-val">91%</div><div class="met-lbl">Avg on-time delivery</div><div class="met-chg chg-g">+2% vs last month</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Supplier risk scores</div>
+          <div class="card-meta">0 = dangerous · 100 = safe</div>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="st" style="table-layout:fixed;min-width:480px">
+          <colgroup><col style="width:25%"><col style="width:12%"><col style="width:13%"><col style="width:22%"><col style="width:13%"><col style="width:15%"></colgroup>
+          <thead><tr><th>Supplier</th><th>Country</th><th>Category</th><th>Risk score</th><th>On-time</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Shenzhen Furniture Co.</td><td>China</td><td>Furniture</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--red)">41</span><div class="sbar-bg"><div class="sbar" style="width:41%;background:var(--red)"></div></div></div></td><td>68%</td><td><span class="badge bd-r">HIGH</span></td></tr>
+            <tr><td>Hanoi TechParts</td><td>Vietnam</td><td>Electronics</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--red)">47</span><div class="sbar-bg"><div class="sbar" style="width:47%;background:var(--red)"></div></div></div></td><td>79%</td><td><span class="badge bd-r">HIGH</span></td></tr>
+            <tr><td>Monterrey Auto Parts</td><td>Mexico</td><td>Auto</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--amber)">63</span><div class="sbar-bg"><div class="sbar" style="width:63%;background:var(--amber)"></div></div></div></td><td>87%</td><td><span class="badge bd-a">MED</span></td></tr>
+            <tr><td>Guangzhou Textiles</td><td>China</td><td>Apparel</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--amber)">58</span><div class="sbar-bg"><div class="sbar" style="width:58%;background:var(--amber)"></div></div></div></td><td>82%</td><td><span class="badge bd-a">MED</span></td></tr>
+            <tr><td>Taipei Silicon Works</td><td>Taiwan</td><td>Semiconductors</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--accent)">84</span><div class="sbar-bg"><div class="sbar" style="width:84%;background:var(--accent)"></div></div></div></td><td>97%</td><td><span class="badge bd-g">LOW</span></td></tr>
+            <tr><td>Bangalore BioMed</td><td>India</td><td>Medical</td><td><div class="sbar-wrap"><span class="snum" style="color:var(--accent)">79</span><div class="sbar-bg"><div class="sbar" style="width:79%;background:var(--accent)"></div></div></div></td><td>94%</td><td><span class="badge bd-g">LOW</span></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+      <div class="cgrid">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Risk trend — 6 months</div></div>
+          <div style="position:relative;height:150px"><canvas id="riskChart" role="img" aria-label="Risk trend line chart">Supplier risk improving over 6 months.</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Risk by country</div></div>
+          <div style="position:relative;height:150px"><canvas id="countryChart" role="img" aria-label="Risk by country bar chart">Average supplier scores by country.</canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALCULATOR PAGE -->
+    <div id="page-calc" class="page">
+      <div class="ph">
+        <div class="ph-title">Landed cost calculator</div>
+        <div class="ph-sub">Simulate tariff scenarios before you order</div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Shipment details</div></div>
+        <div class="calc-grid">
+          <div class="field"><label>Product value (USD)</label><input type="number" id="prodVal" value="50000" step="1000"></div>
+          <div class="field"><label>Origin country</label>
+            <select id="origin">
+              <option value="cn">China</option>
+              <option value="vn">Vietnam</option>
+              <option value="mx">Mexico (USMCA)</option>
+              <option value="in">India</option>
+              <option value="kr">South Korea</option>
+            </select>
+          </div>
+          <div class="field"><label>Product category</label>
+            <select id="hts">
+              <option value="furn">Furniture (HTS 4407)</option>
+              <option value="elec">Electronics (HTS 8471)</option>
+              <option value="text">Textiles (HTS 6109)</option>
+              <option value="auto">Auto parts (HTS 8708)</option>
+              <option value="mach">Machinery (HTS 8479)</option>
+            </select>
+          </div>
+          <div class="field"><label>Shipping weight (lbs)</label><input type="number" id="weight" value="2000" step="100"></div>
+        </div>
+        <button class="calc-btn" onclick="calcCost()"><i class="ti ti-calculator" style="margin-right:6px;font-size:14px"></i>Calculate landed cost</button>
+      </div>
+      <div class="card" id="resultCard" style="display:none">
+        <div class="card-hd">
+          <div class="card-title">Cost breakdown</div>
+          <span id="savingsTag" style="display:none" class="badge bd-g"></span>
+        </div>
+        <table class="result-tbl">
+          <tr><td>Product value</td><td id="r-prod"></td></tr>
+          <tr><td>Tariff duty</td><td id="r-duty"></td></tr>
+          <tr><td>Freight estimate</td><td id="r-freight"></td></tr>
+          <tr><td>Insurance (0.5%)</td><td id="r-ins"></td></tr>
+          <tr><td>Customs brokerage</td><td id="r-customs"></td></tr>
+          <tr><td>Total landed cost</td><td id="r-total"></td></tr>
+        </table>
+        <div class="ai-tip" id="aiTip"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  el.classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(s=>{
+    if(s.getAttribute('onclick')&&s.getAttribute('onclick').includes(id)) s.classList.add('on');
+  });
+  if(id==='risk') setTimeout(drawCharts,60);
+}
+
+var ri=null,ci=null;
+function drawCharts(){
+  var gc='rgba(255,255,255,0.04)',tc='#3d4153';
+  if(ri) ri.destroy();
+  ri=new Chart(document.getElementById('riskChart'),{
+    type:'line',
+    data:{
+      labels:['Dec','Jan','Feb','Mar','Apr','May'],
+      datasets:[
+        {label:'High risk',data:[5,5,4,3,3,2],borderColor:'#f87171',backgroundColor:'transparent',tension:0.4,pointRadius:3,borderDash:[]},
+        {label:'Medium risk',data:[8,9,8,8,7,7],borderColor:'#fbbf24',backgroundColor:'transparent',tension:0.4,pointRadius:3,borderDash:[4,3]}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'JetBrains Mono'}}},y:{min:0,max:12,grid:{color:gc},ticks:{stepSize:3,color:tc,font:{size:10,family:'JetBrains Mono'}}}}}
+  });
+  if(ci) ci.destroy();
+  ci=new Chart(document.getElementById('countryChart'),{
+    type:'bar',
+    data:{
+      labels:['China','Vietnam','Mexico','Taiwan','India'],
+      datasets:[{label:'Avg score',data:[49,53,68,84,79],backgroundColor:['#f87171','#fbbf24','#0ea5e9','#00d4aa','#00d4aa'],borderRadius:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:tc,font:{size:10,family:'JetBrains Mono'}}},y:{min:0,max:100,grid:{color:gc},ticks:{color:tc,font:{size:10,family:'JetBrains Mono'}}}}}
+  });
+}
+
+var TARIFFS={cn:{furn:0.34,elec:0.25,text:0.28,auto:0.27,mach:0.25},vn:{furn:0.10,elec:0.15,text:0.12,auto:0.10,mach:0.08},mx:{furn:0,elec:0,text:0,auto:0,mach:0},in:{furn:0.08,elec:0.10,text:0.12,auto:0.08,mach:0.07},kr:{furn:0.06,elec:0.08,text:0.10,auto:0.08,mach:0.06}};
+var TIPS={cn:'TradePulse detected Vietnam has lower tariffs for this category. Switching suppliers could save significant cost on future orders.',vn:'Good sourcing choice. Note: USTR is reviewing a proposed +15% for electronics. Consider locking in orders before the ruling.',mx:'Mexico qualifies for 0% USMCA duty-free — the most cost-efficient sourcing route for this category right now.',in:'India has a stable trade relationship with the US. No pending tariff reviews for this category in the next 90 days.',kr:'South Korea qualifies under KORUS FTA. Rates are stable with no risk signals currently.'};
+function fmt(n){return '$'+Math.round(n).toLocaleString()}
+function calcCost(){
+  var val=parseFloat(document.getElementById('prodVal').value)||50000;
+  var o=document.getElementById('origin').value;
+  var h=document.getElementById('hts').value;
+  var w=parseFloat(document.getElementById('weight').value)||2000;
+  var rate=TARIFFS[o][h];
+  var duty=val*rate;
+  var freight=Math.round(w*0.65+800);
+  var ins=val*0.005;
+  var customs=285;
+  var total=val+duty+freight+ins+customs;
+  document.getElementById('r-prod').textContent=fmt(val);
+  document.getElementById('r-duty').textContent=fmt(duty)+' ('+Math.round(rate*100)+'%)';
+  document.getElementById('r-freight').textContent=fmt(freight);
+  document.getElementById('r-ins').textContent=fmt(ins);
+  document.getElementById('r-customs').textContent=fmt(customs);
+  document.getElementById('r-total').textContent=fmt(total);
+  var tag=document.getElementById('savingsTag');
+  if(o!=='cn'){var save=val*(TARIFFS['cn'][h]-rate);if(save>0){tag.textContent='Saving '+fmt(save)+' vs China';tag.style.display='inline-flex';}else tag.style.display='none';}
+  else tag.style.display='none';
+  document.getElementById('aiTip').innerHTML='<strong>TradePulse insight:</strong> '+TIPS[o];
+  document.getElementById('resultCard').style.display='block';
+}
+</script>
+</body>
+</html>
+<script>
+// ─── CONNECT TO REAL TRADEPULSE API ──────────────────────────────────────────
+const API = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000/api' 
+  : '/api';
+
+// Load real alerts from backend
+async function loadAlerts() {
+  try {
+    const res = await fetch(`${API}/alerts`);
+    const data = await res.json();
+    if (!data.success) return;
+    // Update metric cards
+    document.querySelector('.met.r .met-val').textContent = data.total;
+    document.querySelector('.met.r:nth-child(2) .met-val').textContent = data.critical;
+    console.log('TradePulse: Real alerts loaded from API', data.total, 'alerts');
+  } catch(e) {
+    console.log('TradePulse: Running in demo mode (API offline)');
+  }
+}
+
+// Load real tariff data into calculator
+async function calcCostReal() {
+  const val = parseFloat(document.getElementById('prodVal').value) || 50000;
+  const country = document.getElementById('origin').value;
+  const category = document.getElementById('hts').value;
+  const weight = parseFloat(document.getElementById('weight').value) || 2000;
+
+  try {
+    const res = await fetch(`${API}/calculate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productValue: val, country, category, weightLbs: weight })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error('API error');
+
+    const c = data.costs;
+    document.getElementById('r-prod').textContent = '$' + c.productValue.toLocaleString();
+    document.getElementById('r-duty').textContent = '$' + c.dutyTax.toLocaleString() + ' (' + data.tariff.totalRate + ')';
+    document.getElementById('r-freight').textContent = '$' + c.freight.toLocaleString();
+    document.getElementById('r-ins').textContent = '$' + c.insurance.toLocaleString();
+    document.getElementById('r-customs').textContent = '$' + c.customsBrokerage.toLocaleString();
+    document.getElementById('r-total').textContent = '$' + c.totalLandedCost.toLocaleString();
+
+    const tag = document.getElementById('savingsTag');
+    if (data.savings.vsChina > 0) {
+      tag.textContent = 'Saving $' + data.savings.vsChina.toLocaleString() + ' vs China';
+      tag.style.display = 'inline-flex';
+    } else { tag.style.display = 'none'; }
+
+    const TIPS = {
+      cn: 'TradePulse detected Vietnam has lower tariffs for this category. Switching suppliers could save significant cost.',
+      vn: 'Good sourcing choice. USTR is reviewing a proposed +15% for electronics. Consider locking in orders before the ruling.',
+      mx: 'Mexico qualifies for 0% USMCA duty-free — the most cost-efficient sourcing route right now.',
+      in: 'India has a stable trade relationship with the US. No pending tariff reviews for this category in the next 90 days.',
+      kr: 'South Korea qualifies under KORUS FTA. Rates are stable with no risk signals currently.'
+    };
+    document.getElementById('aiTip').innerHTML = '<strong>TradePulse insight:</strong> ' + TIPS[country];
+    document.getElementById('resultCard').style.display = 'block';
+
+    console.log('TradePulse: Real tariff data used —', data.tariff.htsCode, data.tariff.totalRate);
+  } catch(e) {
+    // Fallback to local calculation if API offline
+    calcCost();
+  }
+}
+
+// Override the calc button to use real API
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.querySelector('.calc-btn');
+  if (btn) btn.setAttribute('onclick', 'calcCostReal()');
+  loadAlerts();
+});
+</script>
